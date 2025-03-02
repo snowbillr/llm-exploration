@@ -1,5 +1,5 @@
 from playhouse.migrate import *
-from migrations_config import db, migrator
+from db.migrations_config import db, migrator
 from peewee import CharField, TextField, ForeignKeyField, BooleanField, IntegerField
 
 def migrate_forward():

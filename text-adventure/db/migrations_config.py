@@ -3,7 +3,7 @@ from peewee import SqliteDatabase
 from playhouse.migrate import SqliteMigrator
 
 # Database configuration
-DB_PATH = 'text_adventure.db'
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'text_adventure.db')
 db = SqliteDatabase(DB_PATH)
 migrator = SqliteMigrator(db)
 

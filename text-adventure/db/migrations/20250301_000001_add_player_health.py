@@ -1,5 +1,5 @@
 from playhouse.migrate import *
-from migrations_config import db, migrator
+from db.migrations_config import db, migrator
 
 def migrate_forward():
     # Add a health field to the player table

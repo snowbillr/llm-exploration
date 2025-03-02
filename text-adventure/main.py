@@ -1,8 +1,9 @@
 import os
 import sys
-from models import seed_database
-from database import db
-from manage_migrations import run_migrations
+
+from db.models import seed_database
+from db.database import db
+from scripts.manage_migrations import run_migrations
 
 def main():
     """Initialize the database with migrations and seed it with sample data"""

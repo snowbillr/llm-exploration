@@ -7,7 +7,9 @@ import argparse
 from peewee import SqliteDatabase
 from playhouse.migrate import SqliteMigrator, migrate
 
-from migrations_config import db, migrator, MIGRATIONS_DIR
+# Add the parent directory to the path so we can import from the db package
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from db.migrations_config import db, migrator, MIGRATIONS_DIR
 
 def create_migration(name):
     """Create a new migration file"""
@@ -18,7 +20,7 @@ def create_migration(name):
     # Create migration template
     with open(filepath, 'w') as f:
         f.write("""from playhouse.migrate import *
-from migrations_config import db, migrator
+from db.migrations_config import db, migrator
 
 def migrate_forward():
     # Write your forward migration here
