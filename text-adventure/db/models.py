@@ -1,5 +1,5 @@
 from peewee import CharField, TextField, ForeignKeyField, BooleanField, IntegerField
-from db.database import BaseModel, db
+from db.database import BaseModel
 
 class Location(BaseModel):
     name = CharField(max_length=100)
