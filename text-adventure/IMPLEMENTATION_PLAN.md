@@ -18,9 +18,9 @@ Split functionality into specialized agents:
 ## Implementation Steps
 
 ### Phase 1: Agent Structure Setup
-- [ ] Create directory structure for new agents
-- [ ] Implement base classes and system prompts for each agent
-- [ ] Enhance GameMasterAgent's system prompt and class structure to prepare for specialized agent coordination
+- [x] Create directory structure for new agents
+- [x] Implement base classes and system prompts for each agent
+- [x] Enhance GameMasterAgent's system prompt and class structure to prepare for specialized agent coordination
 
 ### Phase 2: Database Enhancements
 - [ ] Add NarrativeSummary model for storing story summaries
