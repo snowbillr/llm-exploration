@@ -1,122 +1,73 @@
-# Peewee Migrations Guide
+# Database Migrations
 
-This project uses Peewee's `playhouse.migrate` module to manage database migrations. This document explains how to use the migration system.
+This project uses a model-migration separation approach for database migrations.
 
-## Migration Files
+## Migration Philosophy
 
-Migration files are stored in the `migrations/` directory and are Python scripts that define how to apply and revert database changes. Each migration file has two main functions:
+1. **Models reflect current state**: The models in `db/models.py` always reflect the current state of the database schema after all migrations have been applied.
 
-- `migrate_forward()`: Applies the migration changes to the database
-- `migrate_backward()`: Reverts the migration changes (optional but recommended)
+2. **Migrations define the path**: Migrations define how to get from one schema version to the next.
 
-## Managing Migrations
+3. **Explicit initial schema**: The initial migration creates tables with explicitly defined columns, not based on the current model definitions.
 
-The `manage_migrations.py` script provides commands to create and run migrations.
+4. **Incremental changes**: Subsequent migrations use the migrator to make incremental changes to the schema.
 
-### Creating a New Migration
+## Creating a New Migration
 
-To create a new migration, run:
-
-```bash
-uv run manage_migrations.py create migration_name
-```
-
-This will create a new migration file in the `migrations/` directory with a timestamp prefix.
-
-### Running Migrations
-
-To apply all pending migrations, run:
+To create a new migration:
 
 ```bash
-uv run manage_migrations.py migrate
+uv run scripts/manage_migrations.py create migration_name
 ```
 
-### Reverting the Last Migration
+Then edit the generated migration file to define your schema changes.
 
-To revert the most recently applied migration, run:
+## Running Migrations
+
+To apply all pending migrations:
 
 ```bash
-uv run manage_migrations.py migrate --backward
+uv run scripts/manage_migrations.py migrate
 ```
 
-## Example Migration
+To revert the last applied migration:
 
-Here's an example of a migration that adds a new column to a table:
+```bash
+uv run scripts/manage_migrations.py migrate --backward
+```
+
+## Migration Best Practices
+
+1. Always create a migration for schema changes, never modify the models without a corresponding migration.
+2. Keep migrations small and focused on a single change.
+3. Always implement both forward and backward migrations.
+4. Test migrations thoroughly before applying them to production.
+
+## Example: Adding a New Column
+
+When you need to add a new column to an existing table, create a migration like this:
 
 ```python
+# Example: db/migrations/YYYYMMDD_HHMMSS_add_player_level.py
 from playhouse.migrate import *
-from migrations_config import db, migrator
+from db.migrations_config import migrator
+from peewee import IntegerField
 
 def migrate_forward():
-    # Add a new column to the player table
     migrate(
-        migrator.add_column('player', 'experience', IntegerField(default=0)),
+        migrator.add_column('player', 'level', IntegerField(default=1)),
     )
 
 def migrate_backward():
-    # Remove the column from the player table
     migrate(
-        migrator.drop_column('player', 'experience'),
+        migrator.drop_column('player', 'level'),
     )
 ```
 
-## Common Migration Operations
+## Handling Database Recreation
 
-Here are some common migration operations:
+With this approach, if the database is ever deleted and recreated:
 
-### Adding a Column
-
-```python
-migrate(
-    migrator.add_column('table_name', 'column_name', ColumnType(default='default_value')),
-)
-```
-
-### Removing a Column
-
-```python
-migrate(
-    migrator.drop_column('table_name', 'column_name'),
-)
-```
-
-### Renaming a Column
-
-```python
-migrate(
-    migrator.rename_column('table_name', 'old_name', 'new_name'),
-)
-```
-
-### Changing a Column Type
-
-```python
-migrate(
-    migrator.drop_column('table_name', 'column_name'),
-    migrator.add_column('table_name', 'column_name', NewColumnType()),
-)
-```
-
-### Adding an Index
-
-```python
-migrate(
-    migrator.add_index('table_name', ('column1', 'column2'), unique=True),
-)
-```
-
-### Removing an Index
-
-```python
-migrate(
-    migrator.drop_index('table_name', 'index_name'),
-)
-```
-
-## Best Practices
-
-1. Always create a `migrate_backward()` function to allow reverting migrations
-2. Keep migrations small and focused on a single change
-3. Test migrations on a development database before applying to production
-4. Never modify existing migration files after they've been applied
-5. Use descriptive names for migration files
+1. The initial migration will create tables with only the original columns.
+2. Subsequent migrations will add any additional columns.
+3. No conflicts will occur because the initial migration doesn't use the current model definitions.

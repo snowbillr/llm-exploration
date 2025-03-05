@@ -1,10 +1,56 @@
 from playhouse.migrate import *
-
 from db.database import db
-from db.models import NPC, PlayerItem, Item, Location, Player
 
 def migrate_forward():
-    db.create_tables([Location, Player, Item, PlayerItem, NPC])
+    # Create tables with explicit SQL rather than using model classes
+    db.execute_sql('''
+    CREATE TABLE IF NOT EXISTS location (
+        id INTEGER PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        description TEXT NOT NULL
+    )
+    ''')
+    
+    db.execute_sql('''
+    CREATE TABLE IF NOT EXISTS item (
+        id INTEGER PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        description TEXT NOT NULL
+    )
+    ''')
+    
+    db.execute_sql('''
+    CREATE TABLE IF NOT EXISTS player (
+        id INTEGER PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        health INTEGER DEFAULT 100
+    )
+    ''')
+    
+    db.execute_sql('''
+    CREATE TABLE IF NOT EXISTS player_item (
+        id INTEGER PRIMARY KEY,
+        player_id INTEGER NOT NULL,
+        item_id INTEGER NOT NULL,
+        quantity INTEGER DEFAULT 1,
+        FOREIGN KEY (player_id) REFERENCES player (id),
+        FOREIGN KEY (item_id) REFERENCES item (id),
+        UNIQUE (player_id, item_id)
+    )
+    ''')
+    
+    db.execute_sql('''
+    CREATE TABLE IF NOT EXISTS npc (
+        id INTEGER PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        description TEXT NOT NULL
+    )
+    ''')
 
 def migrate_backward():
-    db.drop_tables([Location, Player, Item, PlayerItem, NPC])
+    # Drop tables in reverse dependency order
+    db.execute_sql('DROP TABLE IF EXISTS player_item')
+    db.execute_sql('DROP TABLE IF EXISTS npc')
+    db.execute_sql('DROP TABLE IF EXISTS player')
+    db.execute_sql('DROP TABLE IF EXISTS item')
+    db.execute_sql('DROP TABLE IF EXISTS location')

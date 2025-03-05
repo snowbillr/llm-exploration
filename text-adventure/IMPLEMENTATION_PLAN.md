@@ -18,24 +18,25 @@ Split functionality into specialized agents:
 ## Implementation Steps
 
 ### Phase 1: Agent Structure Setup
-1. Create directory structure for new agents
-2. Implement base classes and system prompts for each agent
-3. Enhance GameMasterAgent to coordinate with specialized agents
+- [ ] Create directory structure for new agents
+- [ ] Implement base classes and system prompts for each agent
+- [ ] Enhance GameMasterAgent to coordinate with specialized agents
 
 ### Phase 2: Database Enhancements
-1. Add NarrativeSummary model for storing story summaries
-2. Add CharacterMemory model for detailed NPC tracking
-3. Update database migration scripts
+- [ ] Add NarrativeSummary model for storing story summaries
+- [ ] Add CharacterMemory model for detailed NPC tracking
+- [ ] Add Message model for storing all player-GM interactions
+- [ ] Update database migration scripts
 
 ### Phase 3: Agent Communication System
-1. Implement message routing between agents
-2. Create context enhancement system for GameMasterAgent
-3. Develop periodic summarization logic for NarrativeAgent
+- [ ] Implement message routing between agents
+- [ ] Create context enhancement system for GameMasterAgent
+- [ ] Develop periodic summarization logic for NarrativeAgent
 
 ### Phase 4: Integration and Testing
-1. Update main game loop to incorporate all agents
-2. Implement context window management
-3. Test with complex scenarios to verify memory improvements
+- [ ] Update main game loop to incorporate all agents
+- [ ] Implement context window management
+- [ ] Test with complex scenarios to verify memory improvements
 
 ## Detailed Implementation
 
@@ -98,6 +99,13 @@ class CharacterMemory(BaseModel):
     npc = ForeignKeyField(NPC, backref='memories')
     details = TextField()  # JSON or structured text about the character
     last_updated = DateTimeField(default=datetime.datetime.now)
+    
+class Message(BaseModel):
+    """Stores all messages exchanged between player and game master"""
+    player = ForeignKeyField(Player, backref='messages')
+    role = CharField(max_length=20)  # 'user' or 'assistant'
+    content = TextField()
+    timestamp = DateTimeField(default=datetime.datetime.now)
 ```
 
 ### 3. Main Game Loop Updates
@@ -146,8 +154,9 @@ def main():
             inventory_agent.process_message(gm_response)
             character_agent.process_message(gm_response)
             
-            # Add GM response to history
+            # Add GM response to history and save to database
             messages.append({"role": "assistant", "content": gm_response})
+            save_message_to_database(player.id, "assistant", gm_response)
             
             # Periodically create narrative summaries
             message_count += 1
@@ -167,8 +176,9 @@ def main():
             playing = False
             continue
         
-        # Add player message to history
+        # Add player message to history and save to database
         messages.append({"role": "user", "content": player_input})
+        save_message_to_database(player.id, "user", player_input)
         
         # Process player input with specialized agents
         inventory_agent.process_message(player_input)
@@ -202,11 +212,11 @@ def main():
   - `get_character_details(character_name)`: Retrieve details about a specific character
 
 ## Testing Strategy
-1. Test each agent individually with sample inputs
-2. Test agent communication with mock messages
-3. Test full integration with increasingly complex scenarios
-4. Verify memory retention across long conversations
-5. Test persistence across game sessions
+- [ ] Test each agent individually with sample inputs
+- [ ] Test agent communication with mock messages
+- [ ] Test full integration with increasingly complex scenarios
+- [ ] Verify memory retention across long conversations
+- [ ] Test persistence across game sessions
 
 ## Success Criteria
 - Game Master can accurately recall characters from earlier in the story
@@ -215,5 +225,6 @@ def main():
 - Character personalities and details remain consistent
 
 ## Future Enhancements
-- Storing all messages for a story in the database
 - Creating a 'tags' system so relevant narrative summaries can be queried
+- Implementing a message search functionality for players to recall past interactions
+- Adding sentiment analysis to messages to track emotional tone of the story
