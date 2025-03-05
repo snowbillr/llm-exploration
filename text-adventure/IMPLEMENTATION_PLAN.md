@@ -29,7 +29,10 @@ Split functionality into specialized agents:
 - [ ] Update database migration scripts
 
 ### Phase 3: Agent Communication System
-- [ ] Implement message routing between agents
+- [ ] Implement tool-based communication using ollama-python's `tools` parameter
+- [ ] Define specific tools for each specialized agent (inventory management, character tracking, etc.)
+- [ ] Create message routing system to send GameMaster responses to specialized agents
+- [ ] Implement tool execution logic for each agent to update the database
 - [ ] Create context enhancement system for GameMasterAgent
 - [ ] Develop periodic summarization logic for NarrativeAgent
 
@@ -145,14 +148,191 @@ def main():
             context_message = {"role": "system", "content": enhanced_context}
             context_enhanced_messages = messages[-10:] + [context_message]
             
-            # Get response from game master
-            response = game_master.chat(context_enhanced_messages)
+            # Define tools for the GameMaster to use
+            gm_tools = [
+                # Tools for delegating to specialized agents
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "update_inventory",
+                        "description": "Update player inventory when items are acquired, used, or lost",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "action": {
+                                    "type": "string",
+                                    "enum": ["add", "remove", "use"],
+                                    "description": "The action to perform on the inventory"
+                                },
+                                "item": {
+                                    "type": "string",
+                                    "description": "The name of the item"
+                                },
+                                "quantity": {
+                                    "type": "integer",
+                                    "description": "The quantity of the item (default: 1)"
+                                }
+                            },
+                            "required": ["action", "item"]
+                        }
+                    }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "update_character_memory",
+                        "description": "Update information about an NPC character",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "character_name": {
+                                    "type": "string",
+                                    "description": "The name of the NPC"
+                                },
+                                "details": {
+                                    "type": "string",
+                                    "description": "New information about the character"
+                                }
+                            },
+                            "required": ["character_name", "details"]
+                        }
+                    }
+                }
+            ]
+            
+            # Get response from game master with tools
+            response = game_master.chat(
+                context_enhanced_messages,
+                tools=gm_tools
+            )
+            
+            # Process any tool calls from the response
+            if "tool_calls" in response:
+                for tool_call in response["tool_calls"]:
+                    tool_name = tool_call["function"]["name"]
+                    arguments = json.loads(tool_call["function"]["arguments"])
+                    
+                    if tool_name == "update_inventory":
+                        inventory_agent.handle_inventory_update(
+                            arguments["action"],
+                            arguments["item"],
+                            arguments.get("quantity", 1)
+                        )
+                    elif tool_name == "update_character_memory":
+                        character_agent.update_character_memory(
+                            arguments["character_name"],
+                            arguments["details"]
+                        )
+            
             gm_response = response["message"]["content"]
             print(f"\nGame Master: {gm_response}")
             
-            # Process response with specialized agents
-            inventory_agent.process_message(gm_response)
-            character_agent.process_message(gm_response)
+            # Route the GM response to specialized agents for processing with their tools
+            inventory_tools = [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "add_item",
+                        "description": "Add an item to the player's inventory",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "item_name": {"type": "string"},
+                                "quantity": {"type": "integer"}
+                            },
+                            "required": ["item_name"]
+                        }
+                    }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "remove_item",
+                        "description": "Remove an item from the player's inventory",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "item_name": {"type": "string"},
+                                "quantity": {"type": "integer"}
+                            },
+                            "required": ["item_name"]
+                        }
+                    }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "use_item",
+                        "description": "Mark an item as used in the player's inventory",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "item_name": {"type": "string"}
+                            },
+                            "required": ["item_name"]
+                        }
+                    }
+                }
+            ]
+            
+            # Process GM response with inventory agent
+            inventory_response = inventory_agent.process_message_with_tools(
+                gm_response,
+                tools=inventory_tools
+            )
+            
+            # Handle any inventory tool calls
+            if "tool_calls" in inventory_response:
+                for tool_call in inventory_response["tool_calls"]:
+                    tool_name = tool_call["function"]["name"]
+                    arguments = json.loads(tool_call["function"]["arguments"])
+                    
+                    if tool_name == "add_item":
+                        inventory_agent.add_item(
+                            arguments["item_name"],
+                            arguments.get("quantity", 1)
+                        )
+                    elif tool_name == "remove_item":
+                        inventory_agent.remove_item(
+                            arguments["item_name"],
+                            arguments.get("quantity", 1)
+                        )
+                    elif tool_name == "use_item":
+                        inventory_agent.use_item(arguments["item_name"])
+            
+            # Similar processing for character agent with its own tools
+            character_tools = [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "update_character",
+                        "description": "Update information about an NPC",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "character_name": {"type": "string"},
+                                "details": {"type": "string"}
+                            },
+                            "required": ["character_name", "details"]
+                        }
+                    }
+                }
+            ]
+            
+            character_response = character_agent.process_message_with_tools(
+                gm_response,
+                tools=character_tools
+            )
+            
+            # Handle any character tool calls
+            if "tool_calls" in character_response:
+                for tool_call in character_response["tool_calls"]:
+                    if tool_call["function"]["name"] == "update_character":
+                        arguments = json.loads(tool_call["function"]["arguments"])
+                        character_agent.update_character_memory(
+                            arguments["character_name"],
+                            arguments["details"]
+                        )
             
             # Add GM response to history and save to database
             messages.append({"role": "assistant", "content": gm_response})
@@ -192,7 +372,8 @@ def main():
 
 #### InventoryAgent
 - Methods:
-  - `process_message(message)`: Analyze message for inventory changes
+  - `process_message_with_tools(message, tools)`: Analyze message using LLM tools to detect inventory changes
+  - `handle_inventory_update(action, item, quantity)`: Process inventory updates from GameMaster
   - `get_inventory_summary()`: Generate summary of current inventory
   - `add_item(item_name, quantity)`: Add item to inventory
   - `remove_item(item_name, quantity)`: Remove item from inventory
@@ -206,7 +387,7 @@ def main():
 
 #### CharacterAgent
 - Methods:
-  - `process_message(message)`: Analyze message for character information
+  - `process_message_with_tools(message, tools)`: Analyze message using LLM tools to detect character information
   - `get_relevant_characters(messages)`: Identify characters relevant to current context
   - `update_character_memory(character_name, details)`: Update character information
   - `get_character_details(character_name)`: Retrieve details about a specific character
