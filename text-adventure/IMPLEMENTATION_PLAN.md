@@ -20,7 +20,7 @@ Split functionality into specialized agents:
 ### Phase 1: Agent Structure Setup
 - [ ] Create directory structure for new agents
 - [ ] Implement base classes and system prompts for each agent
-- [ ] Enhance GameMasterAgent to coordinate with specialized agents
+- [ ] Enhance GameMasterAgent's system prompt and class structure to prepare for specialized agent coordination
 
 ### Phase 2: Database Enhancements
 - [ ] Add NarrativeSummary model for storing story summaries
@@ -35,6 +35,7 @@ Split functionality into specialized agents:
 - [ ] Implement tool execution logic for each agent to update the database
 - [ ] Create context enhancement system for GameMasterAgent
 - [ ] Develop periodic summarization logic for NarrativeAgent
+- [ ] Implement error handling for tool calls and API failures
 
 ### Phase 4: Integration and Testing
 - [ ] Update main game loop to incorporate all agents
@@ -334,13 +335,60 @@ def main():
                             arguments["details"]
                         )
             
+            # Process GM response with narrative agent
+            narrative_tools = [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "create_narrative_summary",
+                        "description": "Create a summary of recent narrative events",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "content": {
+                                    "type": "string",
+                                    "description": "The narrative summary content"
+                                },
+                                "tags": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "description": "Tags to categorize the summary"
+                                }
+                            },
+                            "required": ["content"]
+                        }
+                    }
+                }
+            ]
+            
+            narrative_response = narrative_agent.process_message_with_tools(
+                gm_response,
+                tools=narrative_tools
+            )
+            
+            # Handle any narrative tool calls
+            if "tool_calls" in narrative_response:
+                for tool_call in narrative_response["tool_calls"]:
+                    if tool_call["function"]["name"] == "create_narrative_summary":
+                        arguments = json.loads(tool_call["function"]["arguments"])
+                        summary = arguments["content"]
+                        tags = arguments.get("tags", [])
+                        
+                        # Save the summary with tags if provided
+                        if tags:
+                            narrative_agent.tag_summary(summary, tags)
+                        else:
+                            save_narrative_summary(summary)
+            
             # Add GM response to history and save to database
             messages.append({"role": "assistant", "content": gm_response})
             save_message_to_database(player.id, "assistant", gm_response)
             
-            # Periodically create narrative summaries
+            # Periodically create narrative summaries if not already created by tools
             message_count += 1
-            if message_count % 10 == 0:  # Every 10 messages
+            if message_count % 10 == 0 and "tool_calls" not in narrative_response:  # Every 10 messages
                 narrative_summary = narrative_agent.create_summary(messages[-20:])
                 save_narrative_summary(narrative_summary)
         else:
@@ -360,9 +408,67 @@ def main():
         messages.append({"role": "user", "content": player_input})
         save_message_to_database(player.id, "user", player_input)
         
-        # Process player input with specialized agents
-        inventory_agent.process_message(player_input)
-        character_agent.process_message(player_input)
+        # Process player input with specialized agents using tools
+        # Similar tool processing as with GM responses
+        inventory_response = inventory_agent.process_message_with_tools(
+            player_input,
+            tools=inventory_tools
+        )
+        
+        # Handle any inventory tool calls from player input
+        if "tool_calls" in inventory_response:
+            for tool_call in inventory_response["tool_calls"]:
+                tool_name = tool_call["function"]["name"]
+                arguments = json.loads(tool_call["function"]["arguments"])
+                
+                if tool_name == "add_item":
+                    inventory_agent.add_item(
+                        arguments["item_name"],
+                        arguments.get("quantity", 1)
+                    )
+                elif tool_name == "remove_item":
+                    inventory_agent.remove_item(
+                        arguments["item_name"],
+                        arguments.get("quantity", 1)
+                    )
+                elif tool_name == "use_item":
+                    inventory_agent.use_item(arguments["item_name"])
+        
+        # Process player input with character agent
+        character_response = character_agent.process_message_with_tools(
+            player_input,
+            tools=character_tools
+        )
+        
+        # Handle any character tool calls from player input
+        if "tool_calls" in character_response:
+            for tool_call in character_response["tool_calls"]:
+                if tool_call["function"]["name"] == "update_character":
+                    arguments = json.loads(tool_call["function"]["arguments"])
+                    character_agent.update_character_memory(
+                        arguments["character_name"],
+                        arguments["details"]
+                    )
+        
+        # Process player input with narrative agent
+        narrative_response = narrative_agent.process_message_with_tools(
+            player_input,
+            tools=narrative_tools
+        )
+        
+        # Handle any narrative tool calls from player input
+        if "tool_calls" in narrative_response:
+            for tool_call in narrative_response["tool_calls"]:
+                if tool_call["function"]["name"] == "create_narrative_summary":
+                    arguments = json.loads(tool_call["function"]["arguments"])
+                    summary = arguments["content"]
+                    tags = arguments.get("tags", [])
+                    
+                    # Save the summary with tags if provided
+                    if tags:
+                        narrative_agent.tag_summary(summary, tags)
+                    else:
+                        save_narrative_summary(summary)
 ```
 
 ### 4. Agent Implementation Details
@@ -381,9 +487,11 @@ def main():
 
 #### NarrativeAgent
 - Methods:
+  - `process_message_with_tools(message, tools)`: Analyze message using LLM tools to identify key narrative elements
   - `create_summary(messages)`: Generate summary from recent messages
   - `get_recent_summaries(count)`: Retrieve recent narrative summaries
   - `combine_summaries(summaries)`: Combine multiple summaries
+  - `tag_summary(summary, tags)`: Add searchable tags to narrative summaries
 
 #### CharacterAgent
 - Methods:
