@@ -1,4 +1,3 @@
-from .base_agent import BaseAgent
 from .game_master import GameMasterAgent
 from .inventory_agent import InventoryAgent
 from .narrative_agent import NarrativeAgent

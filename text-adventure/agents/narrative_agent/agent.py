@@ -7,36 +7,8 @@ from db.models import NarrativeSummary, Player
 class NarrativeAgent(BaseAgent):
     def __init__(self):
         super().__init__(name='narrative_agent', system_prompt=SYSTEM_PROMPT)
-    
-    def create_summary(self, messages, player_id=None):
-        """
-        Generate a summary from recent messages and save it to the database.
-        
-        Args:
-            messages (list): List of recent message dictionaries
-            player_id (int, optional): ID of the player this summary relates to
-            
-        Returns:
-            str: A narrative summary of recent events
-        """
-        # This would typically analyze messages and create a summary
-        # For demonstration, we'll create a simple summary
-        summary = "Adventure continues with new challenges and opportunities."
-        key_developments = json.dumps(["Player found a new item", "Discovered a hidden passage"])
-        active_goals = json.dumps(["Find the lost artifact", "Return to the village"])
-        
-        # Save to database
-        narrative_summary = NarrativeSummary.create(
-            summary=summary,
-            key_developments=key_developments,
-            active_goals=active_goals,
-            timestamp=int(time.time()),
-            player=Player.get_by_id(player_id) if player_id else None
-        )
-        
-        return summary
-    
-    def get_recent_summaries(self, count=3, player_id=None):
+
+    def get_narrative_context(self, count=3, player_id=None):
         """
         Retrieve recent narrative summaries from the database.
         
@@ -71,91 +43,61 @@ ACTIVE GOALS:
             
         return formatted_summaries
     
-    def combine_summaries(self, summaries):
+    def update_narrative_context(self, game_master_message, player_message, player_id=None):
         """
-        Combine multiple summaries into a cohesive narrative.
+        Generate a summary from recent messages and save it to the database.
         
         Args:
-            summaries (list): List of summary strings
+            messages (list): List of recent message dictionaries
+            player_id (int, optional): ID of the player this summary relates to
             
         Returns:
-            str: A combined narrative summary
+            str: A narrative summary of recent events
         """
-        # This would typically combine and condense multiple summaries
-        # For now, return a placeholder message
-        return "COMBINED SUMMARY PLACEHOLDER - Will be implemented with summary processing"
-    
-    def process_message_with_tools(self, message):
-        """
-        Process a message using LLM tools to identify key narrative elements.
+
+        llm_response = self.chat([{"role": "assistant", "content": game_master_message}, {"role": "user", "content": player_message}])['message']['content']
+
+        # extract the summary, key developments, and active goals from the response
+        summary = ""
+        key_developments = []
+        active_goals = []
         
-        Args:
-            message (str): The message to analyze
-            tools (list, optional): List of tool definitions for the LLM
+        # Parse the narrative summary
+        if "NARRATIVE SUMMARY:" in llm_response and "KEY DEVELOPMENTS:" in llm_response:
+            summary_start = llm_response.find("NARRATIVE SUMMARY:") + len("NARRATIVE SUMMARY:")
+            summary_end = llm_response.find("KEY DEVELOPMENTS:")
+            summary = llm_response[summary_start:summary_end].strip()
+        
+        # Parse the key developments
+        if "KEY DEVELOPMENTS:" in llm_response and "ACTIVE GOALS:" in llm_response:
+            dev_start = llm_response.find("KEY DEVELOPMENTS:") + len("KEY DEVELOPMENTS:")
+            dev_end = llm_response.find("ACTIVE GOALS:")
+            dev_text = llm_response[dev_start:dev_end].strip()
             
-        Returns:
-            dict: The response from the LLM, potentially including tool calls
-        """
-        tools = [
-            {
-                "type": "function",
-                "function": {
-                    "name": "create_summary",
-                    "description": "Generate a summary from recent messages",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "content": {
-                                "type": "string",
-                                "description": "The narrative summary content"
-                            }
-                        },
-                        "required": ["content"]
-                    }
-                }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "get_recent_summaries",
-                    "description": "Retrieve recent narrative summaries",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "count": {
-                                "type": "integer",
-                                "description": "Number of summaries to retrieve"
-                            }
-                        },
-                        "required": []
-                    }
-                }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "tag_summary",
-                    "description": "Add searchable tags to narrative summaries",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "summary": {
-                                "type": "string",
-                                "description": "The narrative summary"
-                            },
-                            "tags": {
-                                "type": "array",
-                                "items": {
-                                    "type": "string"
-                                },
-                                "description": "Tags to categorize the summary"
-                            }
-                        },
-                        "required": ["summary", "tags"]
-                    }
-                }
-            }
-        ]
+            # Extract bullet points
+            for line in dev_text.split('\n'):
+                line = line.strip()
+                if line.startswith('- '):
+                    key_developments.append(line[2:])
         
-        messages = [{"role": "user", "content": message}]
-        return self.chat(messages=messages, tools=tools)
+        # Parse the active goals
+        if "ACTIVE GOALS:" in llm_response:
+            goals_start = llm_response.find("ACTIVE GOALS:") + len("ACTIVE GOALS:")
+            goals_text = llm_response[goals_start:].strip()
+            
+            # Extract bullet points
+            for line in goals_text.split('\n'):
+                line = line.strip()
+                if line.startswith('- '):
+                    active_goals.append(line[2:])
+        
+        # Save to database
+        narrative_summary = NarrativeSummary.create(
+            summary=summary,
+            key_developments=json.dumps(key_developments),
+            active_goals=json.dumps(active_goals),
+            timestamp=int(time.time()),
+            player=Player.get_by_id(player_id) if player_id else None
+        )
+        
+        return summary

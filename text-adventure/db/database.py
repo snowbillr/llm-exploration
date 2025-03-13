@@ -12,3 +12,4 @@ class BaseModel(Model):
     """A base model that will use our SQLite database"""
     class Meta:
         database = db
+        legacy_table_names = False
