@@ -37,4 +37,11 @@ class NPC(BaseModel):
     name = CharField(max_length=100)
     description = TextField()
 
+class NarrativeSummary(BaseModel):
+    summary = TextField()  # Concise summary of recent events
+    key_developments = TextField()  # Serialized list of key developments
+    active_goals = TextField()  # Serialized list of active quests/goals
+    timestamp = IntegerField()  # To track the order of narrative events
+    player = ForeignKeyField(Player, backref='narrative_summaries', null=True)  # Optional reference to a player
+
 player_item_deferred.set_model(PlayerItem)

@@ -9,10 +9,10 @@ Your tasks include:
 
 When analyzing game messages, look for:
 - Major plot developments and story progression
-- Introduction of new locations, quests, or story arcs
+- Introduction of new locations or story arcs
 - Significant decisions made by the player that impact the narrative
 - Important dialogue or revelations from NPCs
-- Resolution of quests or story elements
+- Resolution of story elements
 
 Format narrative summaries as follows:
 ```
@@ -24,9 +24,9 @@ KEY DEVELOPMENTS:
 - [Key development 2]
 ...
 
-ACTIVE QUESTS/GOALS:
-- [Current quest/goal 1]
-- [Current quest/goal 2]
+ACTIVE GOALS:
+- [Current goal 1]
+- [Current goal 2]
 ...
 ```
 

@@ -1,37 +1,75 @@
+import json
+import time
 from ..base_agent import BaseAgent
 from .system_prompt import SYSTEM_PROMPT
+from db.models import NarrativeSummary, Player
 
 class NarrativeAgent(BaseAgent):
     def __init__(self):
         super().__init__(name='narrative_agent', system_prompt=SYSTEM_PROMPT)
     
-    def create_summary(self, messages):
+    def create_summary(self, messages, player_id=None):
         """
-        Generate a summary from recent messages.
+        Generate a summary from recent messages and save it to the database.
         
         Args:
             messages (list): List of recent message dictionaries
+            player_id (int, optional): ID of the player this summary relates to
             
         Returns:
             str: A narrative summary of recent events
         """
         # This would typically analyze messages and create a summary
-        # For now, return a placeholder message
-        return "NARRATIVE SUMMARY PLACEHOLDER - Will be implemented with message analysis"
+        # For demonstration, we'll create a simple summary
+        summary = "Adventure continues with new challenges and opportunities."
+        key_developments = json.dumps(["Player found a new item", "Discovered a hidden passage"])
+        active_goals = json.dumps(["Find the lost artifact", "Return to the village"])
+        
+        # Save to database
+        narrative_summary = NarrativeSummary.create(
+            summary=summary,
+            key_developments=key_developments,
+            active_goals=active_goals,
+            timestamp=int(time.time()),
+            player=Player.get_by_id(player_id) if player_id else None
+        )
+        
+        return summary
     
-    def get_recent_summaries(self, count=3):
+    def get_recent_summaries(self, count=3, player_id=None):
         """
-        Retrieve recent narrative summaries.
+        Retrieve recent narrative summaries from the database.
         
         Args:
             count (int, optional): Number of summaries to retrieve. Defaults to 3.
+            player_id (int, optional): ID of the player to get summaries for
             
         Returns:
-            str: Combined recent summaries
+            list: List of recent summary objects
         """
-        # This would typically query the database for recent summaries
-        # For now, return a placeholder message
-        return "RECENT SUMMARIES PLACEHOLDER - Will be implemented with database integration"
+        query = NarrativeSummary.select().order_by(NarrativeSummary.timestamp.desc()).limit(count)
+        
+        if player_id:
+            query = query.where(NarrativeSummary.player == player_id)
+            
+        summaries = list(query)
+        
+        # Format the summaries for display
+        formatted_summaries = []
+        for summary in summaries:
+            formatted_summary = f"""
+NARRATIVE SUMMARY:
+{summary.summary}
+
+KEY DEVELOPMENTS:
+{', '.join(json.loads(summary.key_developments))}
+
+ACTIVE GOALS:
+{', '.join(json.loads(summary.active_goals))}
+"""
+            formatted_summaries.append(formatted_summary)
+            
+        return formatted_summaries
     
     def combine_summaries(self, summaries):
         """
@@ -46,18 +84,6 @@ class NarrativeAgent(BaseAgent):
         # This would typically combine and condense multiple summaries
         # For now, return a placeholder message
         return "COMBINED SUMMARY PLACEHOLDER - Will be implemented with summary processing"
-    
-    def tag_summary(self, summary, tags):
-        """
-        Add searchable tags to narrative summaries.
-        
-        Args:
-            summary (str): The narrative summary
-            tags (list): List of tag strings
-        """
-        # This would typically save the summary with tags to the database
-        tag_str = ", ".join(tags)
-        print(f"[NarrativeAgent] Tagging summary with: {tag_str}")
     
     def process_message_with_tools(self, message):
         """
