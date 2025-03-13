@@ -1,4 +1,4 @@
-from peewee import CharField, TextField, ForeignKeyField, BooleanField, IntegerField
+from peewee import CharField, TextField, ForeignKeyField, BooleanField, IntegerField, DateTimeField
 from playhouse.shortcuts import ManyToManyField, DeferredThroughModel
 from db.database import BaseModel
 
@@ -43,5 +43,18 @@ class NarrativeSummary(BaseModel):
     active_goals = TextField()  # Serialized list of active quests/goals
     timestamp = IntegerField()  # To track the order of narrative events
     player = ForeignKeyField(Player, backref='narrative_summaries', null=True)  # Optional reference to a player
+
+class Message(BaseModel):
+    ROLE_USER = 'user'
+    ROLE_ASSISTANT = 'assistant'
+    ROLE_CHOICES = [
+        (ROLE_USER, 'User'),
+        (ROLE_ASSISTANT, 'Assistant')
+    ]
+    
+    content = TextField()  # The content of the message
+    role = CharField(max_length=10, choices=ROLE_CHOICES)  # Role of the message sender (user or assistant)
+    timestamp = DateTimeField()  # When the message was sent
+    player = ForeignKeyField(Player, backref='messages', null=True)  # Optional reference to a player
 
 player_item_deferred.set_model(PlayerItem)
