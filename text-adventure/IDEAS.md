@@ -9,3 +9,5 @@ TUI for the user interacting with the game
 
 - active goals shouldn't live in the narrative summary model, they are changing too frequently. they should span multiple narrative summaries
 - update the game master system prompt to try and keep the player on track and not introduce brand new elements from the world to fit the player's story.
+
+- instrumentation - logging
