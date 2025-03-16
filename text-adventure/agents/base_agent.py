@@ -1,4 +1,4 @@
-from ollama import chat, ChatResponse, create
+from ollama import chat, create
 
 class BaseAgent:
   def __init__(self, name: str, system_prompt: str):

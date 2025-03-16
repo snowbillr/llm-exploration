@@ -1,9 +1,13 @@
+import logging
+
 from db.database import db
 from scripts.manage_migrations import run_migrations
 from db.models import Message, Player
 from datetime import datetime
 
 from agents import GameMasterAgent, InventoryAgent, NarrativeAgent, CharacterAgent
+
+logging.basicConfig(level=logging.INFO, filename="development.log", filemode="w")
 
 def main():
     run_migrations()
@@ -47,12 +51,12 @@ def main():
         character_context = ""
         inventory_context = ""
         last_messages = [
-            "{message.role}: {message.content}"
+            f"{message.role}: {message.content}"
             for message
             in Message.select().where(Message.player == player.id).order_by(Message.timestamp.desc()).limit(3)
         ]
 
-        message = """
+        message = f"""
 NARRATIVE_CONTEXT: {narrative_context}
 
 CHARACTER_CONTEXT: {character_context}

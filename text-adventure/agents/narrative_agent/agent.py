@@ -1,3 +1,4 @@
+import logging
 import json
 import time
 from pydantic import BaseModel
@@ -6,10 +7,10 @@ from ..base_agent import BaseAgent
 from .system_prompt import SYSTEM_PROMPT
 from db.models import NarrativeSummary, Player
 
+logger = logging.getLogger(__name__)
+
 class NarrativeSummaryResponse(BaseModel):
-    summary: str
     key_developments: list[str]
-    active_goals: list[str]
 
 class NarrativeAgent(BaseAgent):
     def __init__(self):
@@ -37,14 +38,8 @@ class NarrativeAgent(BaseAgent):
         formatted_summaries = []
         for summary in summaries:
             formatted_summary = f"""
-NARRATIVE SUMMARY:
-{summary.summary}
-
 KEY DEVELOPMENTS:
 {', '.join(json.loads(summary.key_developments))}
-
-ACTIVE GOALS:
-{', '.join(json.loads(summary.active_goals))}
 """
             formatted_summaries.append(formatted_summary)
             
@@ -70,10 +65,13 @@ ACTIVE GOALS:
             format=NarrativeSummaryResponse.model_json_schema())
         narrative_summary_response = NarrativeSummaryResponse.model_validate_json(llm_response.message.content)
 
-        NarrativeSummary.create(
-            summary=narrative_summary_response.summary,
+        narrative_summary = NarrativeSummary.create(
             key_developments=json.dumps(narrative_summary_response.key_developments),
-            active_goals=json.dumps(narrative_summary_response.active_goals),
             timestamp=int(time.time()),
             player=Player.get_by_id(player_id) if player_id else None
         )
+
+        logger.info(f"""
+Narrative agent:
+  Key developments: {narrative_summary.key_developments}                    
+""")

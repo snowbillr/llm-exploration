@@ -1,13 +1,22 @@
-output from game master agent is shown to user, but also sent to other agents
-- inventory agent: responsible before managing items in your inventory
-- narrative agent: responsible for summarizing key points in the story, so that the story can be resumed later
-- character agent: responsible for tracking characters in the story
-
-game master agent should use a combination of the N most recent messages and the M most recent narrative summaries
-
 TUI for the user interacting with the game
 
-- active goals shouldn't live in the narrative summary model, they are changing too frequently. they should span multiple narrative summaries
 - update the game master system prompt to try and keep the player on track and not introduce brand new elements from the world to fit the player's story.
 
-- instrumentation - logging
+- don't end the game master prompt with any questions to the user
+
+- does updating the narrative context need more than the game master message and the player message?
+
+- narrative entries thoughts
+  - are key developments are too granular?
+  - no need for a summary, the key developments are enough
+  - update model such that each entry is a note on the current player's story rather than containing multiple notes
+
+- local model sucks at taking notes compared to chatgpt 4o
+  - we're in prompt engineering territory now
+  - need a way to compare the performance of different prompts to the same messages
+
+- generate a quest line prior to starting the story
+  - characters
+  - items
+  - locations
+  - track progress in a new table thats used in the enhanced context
