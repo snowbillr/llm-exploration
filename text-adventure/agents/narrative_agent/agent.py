@@ -59,8 +59,17 @@ KEY DEVELOPMENTS:
 
         llm_response = self.chat(
             messages=[
-                {"role": "assistant", "content": game_master_message},
-                {"role": "user", "content": player_message}
+                {
+                    "role": "user",
+                    "content": f"""
+                 <game master message>
+                 {game_master_message}
+                 </game master message>
+                 <player message>
+                 {player_message}
+                 </player message>
+                 """
+                 }
             ],
             format=NarrativeSummaryResponse.model_json_schema())
         narrative_summary_response = NarrativeSummaryResponse.model_validate_json(llm_response.message.content)
