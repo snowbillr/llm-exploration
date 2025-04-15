@@ -18,12 +18,11 @@ class TextAdventureApp(App):
         yield Input(placeholder="What do you do?", id="input")
 
     async def on_mount(self) -> None:
-        # Setup game and prompt for player name
         messages = self.query_one("#messages", RichLog)
         messages.write("[b]Game Master:[/b] Welcome to the Fantasy Text Adventure!", scroll_end=True)
         messages.write("[b]Game Master:[/b] What is your name?", scroll_end=True)
         self.initialized = False
-        # Autofocus the input box
+
         input_box = self.query_one("#input", Input)
         input_box.focus()
 
