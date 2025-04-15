@@ -6,7 +6,7 @@ from db.models import Message, Player
 from datetime import datetime
 
 from agents import GameMasterAgent, InventoryAgent, NarrativeAgent, CharacterAgent
-from game_loop import GameLoop
+from textual_app import TextAdventureApp
 
 logging.basicConfig(level=logging.INFO, filename="development.log", filemode="w")
 
@@ -17,6 +17,6 @@ def get_game_master_context():
 if __name__ == "__main__":
     run_migrations()
     try:
-        GameLoop().run()
+        TextAdventureApp().run()
     finally:
         db.close()
