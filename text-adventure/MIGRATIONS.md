@@ -17,7 +17,7 @@ This project uses a model-migration separation approach for database migrations.
 To create a new migration:
 
 ```bash
-uv run scripts/manage_migrations.py create migration_name
+uv run -m scripts.manage_migrations create migration_name
 ```
 
 Then edit the generated migration file to define your schema changes.
@@ -27,13 +27,13 @@ Then edit the generated migration file to define your schema changes.
 To apply all pending migrations:
 
 ```bash
-uv run scripts/manage_migrations.py migrate
+uv run -m scripts.manage_migrations migrate
 ```
 
 To revert the last applied migration:
 
 ```bash
-uv run scripts/manage_migrations.py migrate --backward
+uv run -m scripts.manage_migrations migrate --backward
 ```
 
 ## Migration Best Practices

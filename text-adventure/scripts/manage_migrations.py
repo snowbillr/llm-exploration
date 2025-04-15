@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 import os
-import sys
 import importlib.util
 import datetime
 import argparse
-from peewee import SqliteDatabase
-from playhouse.migrate import SqliteMigrator, migrate
 
 from db.database import db
-from db.migrations_config import migrator, MIGRATIONS_DIR
+from db.migrations_config import MIGRATIONS_DIR
 
 def create_migration(name):
     """Create a new migration file"""
