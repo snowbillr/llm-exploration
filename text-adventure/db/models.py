@@ -38,7 +38,7 @@ class NPC(BaseModel):
     description = TextField()
 
 class NarrativeSummary(BaseModel):
-    key_developments = TextField()  # Serialized list of key developments
+    note = TextField()  # A single narrative note
     timestamp = IntegerField()  # To track the order of narrative events
     player = ForeignKeyField(Player, backref='narrative_summaries', null=True)  # Optional reference to a player
 

@@ -39,7 +39,7 @@ class NarrativeAgent(BaseAgent):
         for summary in summaries:
             formatted_summary = f"""
 KEY DEVELOPMENTS:
-{', '.join(json.loads(summary.key_developments))}
+{summary.note}
 """
             formatted_summaries.append(formatted_summary)
             
@@ -74,13 +74,15 @@ KEY DEVELOPMENTS:
             format=NarrativeSummaryResponse.model_json_schema())
         narrative_summary_response = NarrativeSummaryResponse.model_validate_json(llm_response.message.content)
 
-        narrative_summary = NarrativeSummary.create(
-            key_developments=json.dumps(narrative_summary_response.key_developments),
-            timestamp=int(time.time()),
-            player=Player.get_by_id(player_id) if player_id else None
-        )
+        # Create one NarrativeSummary per note
+        for note in narrative_summary_response.key_developments:
+            NarrativeSummary.create(
+                note=note,
+                timestamp=int(time.time()),
+                player=Player.get_by_id(player_id) if player_id else None
+            )
 
         logger.info(f"""
 Narrative agent:
-  Key developments: {narrative_summary.key_developments}                    
+  Key developments: {narrative_summary_response.key_developments}                    
 """)
