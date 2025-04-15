@@ -23,6 +23,9 @@ class TextAdventureApp(App):
         messages.write("[b]Game Master:[/b] Welcome to the Fantasy Text Adventure!", scroll_end=True)
         messages.write("[b]Game Master:[/b] What is your name?", scroll_end=True)
         self.initialized = False
+        # Autofocus the input box
+        input_box = self.query_one("#input", Input)
+        input_box.focus()
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         messages = self.query_one("#messages", RichLog)
@@ -48,9 +51,12 @@ class TextAdventureApp(App):
             self.exit()
             return
 
-        # Call the game logic asynchronously
+        input_box.disabled = True
         response = await asyncio.to_thread(self.game_loop.process_turn, user_message, self.player)
+        input_box.disabled = False
+
         messages.write(f"[b][magenta]Game Master:[/magenta][/b] {response}", scroll_end=True)
+        input_box.focus()
 
 if __name__ == "__main__":
     TextAdventureApp().run()
