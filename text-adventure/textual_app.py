@@ -1,27 +1,49 @@
 from textual.app import App, ComposeResult
-from textual.widgets import RichLog, Input
+from textual.widgets import Footer, RichLog, Input, Label
+from textual.containers import Vertical, Horizontal
+from textual.binding import Binding
 import asyncio
 
 from game_loop import GameLoop
 
 class TextAdventureApp(App):
     CSS_PATH = None
+    BINDINGS = [
+        Binding("ctrl+x", "toggle_debug", "Toggle Debug Panel", show=True, priority=True)
+    ]
 
     def __init__(self):
         super().__init__()
         self.game_loop = GameLoop()
         self.player = None
         self.initialized = False
+        self.debug_mode = False
 
     def compose(self) -> ComposeResult:
-        yield RichLog(id="messages", highlight=True, markup=True, wrap=True)
-        yield Input(placeholder="What do you do?", id="input")
+        main_panel = Vertical(
+            RichLog(id="messages", highlight=True, markup=True, wrap=True),
+            Input(placeholder="What do you do?", id="input"),
+            id="main_panel"
+        )
+        debug_panel = Vertical(
+            Label("Debug Log", id="debug_label"),
+            RichLog(id="debug_log", highlight=True, markup=True, wrap=True),
+            id="debug_panel"
+        )
+
+        yield Vertical(
+            Horizontal(main_panel, debug_panel, id="panels_container"),
+            Footer(),
+            id="root_container"
+        )
 
     async def on_mount(self) -> None:
+        debug_panel = self.query_one("#debug_panel", Vertical)
+        debug_panel.display = self.debug_mode
+
         messages = self.query_one("#messages", RichLog)
         messages.write("[b]Game Master:[/b] Welcome to the Fantasy Text Adventure!", scroll_end=True)
         messages.write("[b]Game Master:[/b] What is your name?", scroll_end=True)
-        self.initialized = False
 
         input_box = self.query_one("#input", Input)
         input_box.focus()
@@ -55,7 +77,16 @@ class TextAdventureApp(App):
         input_box.disabled = False
 
         messages.write(f"[b][magenta]Game Master:[/magenta][/b] {response}", scroll_end=True)
+        debug_log = self.query_one("#debug_log", RichLog)
+        if self.debug_mode:
+            debug_log.write(f"[b][magenta]Game Master:[/magenta][/b] {response}", scroll_end=True)
         input_box.focus()
+
+    def action_toggle_debug(self):
+        self.debug_mode = not self.debug_mode
+
+        debug_panel = self.query_one("#debug_panel", Vertical)
+        debug_panel.display = self.debug_mode
 
 if __name__ == "__main__":
     TextAdventureApp().run()
