@@ -14,7 +14,7 @@ class TextAdventureApp(App):
         self.initialized = False
 
     def compose(self) -> ComposeResult:
-        yield RichLog(id="messages", highlight=True)
+        yield RichLog(id="messages", highlight=True, markup=True, wrap=True)
         yield Input(placeholder="What do you do?", id="input")
 
     async def on_mount(self) -> None:
