@@ -41,7 +41,7 @@ class TextAdventureApp(App):
             id="root_container"
         )
 
-    def on_mount(self) -> None:
+    async def on_mount(self) -> None:
         debug_panel = self.query_one("#debug_panel", Vertical)
         debug_panel.display = self.debug_mode
 
@@ -55,7 +55,7 @@ class TextAdventureApp(App):
         # Start background task to update debug panel with LLM events
         self.set_interval(1, self.check_llm_events, pause=False)
 
-    def check_llm_events(self):
+    async def check_llm_events(self):
         debug_log = self.query_one("#debug_log", RichLog)
         while LLMEventBus.has_events():
             event = LLMEventBus.get_event()
@@ -95,7 +95,7 @@ class TextAdventureApp(App):
         messages.write(f"[b][magenta]Game Master:[/magenta][/b] {response}", scroll_end=True)
         input_box.focus()
 
-    def action_toggle_debug(self):
+    async def action_toggle_debug(self):
         self.debug_mode = not self.debug_mode
 
         debug_panel = self.query_one("#debug_panel", Vertical)
