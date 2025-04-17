@@ -58,12 +58,12 @@ KEY DEVELOPMENTS:
         """
 
         llm_input = f"""
-                 <game master message>
-                 {game_master_message}
-                 </game master message>
                  <player message>
                  {player_message}
                  </player message>
+                 <game master message>
+                 {game_master_message}
+                 </game master message>
                  """
         llm_response = self.chat(
             messages=[
