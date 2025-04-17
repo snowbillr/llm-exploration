@@ -2,7 +2,7 @@ import logging
 import json
 import time
 from pydantic import BaseModel
-
+from agents.llm_logger import log_llm_call
 from ..base_agent import BaseAgent
 from .system_prompt import SYSTEM_PROMPT
 from db.models import NarrativeSummary, Player
@@ -57,11 +57,7 @@ KEY DEVELOPMENTS:
             str: A narrative summary of recent events
         """
 
-        llm_response = self.chat(
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"""
+        llm_input = f"""
                  <game master message>
                  {game_master_message}
                  </game master message>
@@ -69,10 +65,18 @@ KEY DEVELOPMENTS:
                  {player_message}
                  </player message>
                  """
-                 }
+        llm_response = self.chat(
+            messages=[
+                {
+                    "role": "user",
+                    "content": llm_input
+                }
             ],
             format=NarrativeSummaryResponse.model_json_schema())
         narrative_summary_response = NarrativeSummaryResponse.model_validate_json(llm_response.message.content)
+
+        # Log the LLM call for the narrative agent
+        log_llm_call("NarrativeAgent", llm_input, llm_response.message.content)
 
         # Create one NarrativeSummary per note
         for note in narrative_summary_response.key_developments:

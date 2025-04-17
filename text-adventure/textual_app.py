@@ -2,9 +2,13 @@ from textual.app import App, ComposeResult
 from textual.widgets import Footer, RichLog, Input, Label
 from textual.containers import Vertical, Horizontal
 from textual.binding import Binding
+import time
 import asyncio
 
 from game_loop import GameLoop
+from agents.llm_logger import log_llm_call
+from llm_event_bus import LLMEventBus
+from llm_event_types import LLMEvent
 
 class TextAdventureApp(App):
     CSS_PATH = None
@@ -37,7 +41,7 @@ class TextAdventureApp(App):
             id="root_container"
         )
 
-    async def on_mount(self) -> None:
+    def on_mount(self) -> None:
         debug_panel = self.query_one("#debug_panel", Vertical)
         debug_panel.display = self.debug_mode
 
@@ -47,6 +51,18 @@ class TextAdventureApp(App):
 
         input_box = self.query_one("#input", Input)
         input_box.focus()
+
+        # Start background task to update debug panel with LLM events
+        self.set_interval(1, self.check_llm_events, pause=False)
+
+    def check_llm_events(self):
+        debug_log = self.query_one("#debug_log", RichLog)
+        while LLMEventBus.has_events():
+            event = LLMEventBus.get_event()
+            debug_log.write(
+                f"[b][yellow]{event.agent}[/yellow][/b] [i]@ {event.timestamp:.2f}[/i]\n[cyan]Input:[/cyan] {event.input_data}\n[magenta]Output:[/magenta] {event.output_data}",
+                scroll_end=True
+            )
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         messages = self.query_one("#messages", RichLog)
@@ -77,9 +93,6 @@ class TextAdventureApp(App):
         input_box.disabled = False
 
         messages.write(f"[b][magenta]Game Master:[/magenta][/b] {response}", scroll_end=True)
-        debug_log = self.query_one("#debug_log", RichLog)
-        if self.debug_mode:
-            debug_log.write(f"[b][magenta]Game Master:[/magenta][/b] {response}", scroll_end=True)
         input_box.focus()
 
     def action_toggle_debug(self):
