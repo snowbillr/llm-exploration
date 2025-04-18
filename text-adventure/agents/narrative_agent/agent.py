@@ -16,7 +16,7 @@ class NarrativeAgent(BaseAgent):
     def __init__(self):
         super().__init__(name='narrative_agent', system_prompt=SYSTEM_PROMPT)
 
-    def get_narrative_context(self, count=3, player_id=None):
+    def get_narrative_context(self, player_id=None):
         """
         Retrieve recent narrative summaries from the database.
         
@@ -27,7 +27,7 @@ class NarrativeAgent(BaseAgent):
         Returns:
             list: List of recent summary objects
         """
-        query = NarrativeSummary.select().order_by(NarrativeSummary.timestamp.desc()).limit(count)
+        query = NarrativeSummary.select().order_by(NarrativeSummary.timestamp.desc()).limit(20)
         
         if player_id:
             query = query.where(NarrativeSummary.player == player_id)
