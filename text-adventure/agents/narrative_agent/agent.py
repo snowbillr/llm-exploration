@@ -32,18 +32,7 @@ class NarrativeAgent(BaseAgent):
         if player_id:
             query = query.where(NarrativeSummary.player == player_id)
             
-        summaries = list(query)
-        
-        # Format the summaries for display
-        formatted_summaries = []
-        for summary in summaries:
-            formatted_summary = f"""
-KEY DEVELOPMENTS:
-{summary.note}
-"""
-            formatted_summaries.append(formatted_summary)
-            
-        return formatted_summaries
+        return [summary.note for summary in query]
     
     def update_narrative_context(self, game_master_message, player_message, player_id=None):
         """

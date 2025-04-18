@@ -1,6 +1,7 @@
 from db.models import Message, Player
 from datetime import datetime
 from agents import GameMasterAgent, InventoryAgent, NarrativeAgent, CharacterAgent
+from agents.llm_logger import log_llm_call
 
 class GameLoop:
     def __init__(self):
@@ -32,22 +33,28 @@ class GameLoop:
         inventory_context = ""
         last_messages = [
             f"{message.role}: {message.content}"
-            for message in Message.select().where(Message.player == self.player.id).order_by(Message.timestamp.desc()).limit(3)
+            for message in Message.select().where(Message.player == self.player.id).order_by(Message.timestamp.asc()).limit(4)
         ]
         message = f"""
-NARRATIVE_CONTEXT: {narrative_context}
+NARRATIVE_CONTEXT:
+{'\n- '.join(narrative_context)}
 
-CHARACTER_CONTEXT: {character_context}
+CHARACTER_CONTEXT:
+{character_context}
 
-INVENTORY_CONTEXT: {inventory_context}
+INVENTORY_CONTEXT:
+{inventory_context}
 
-LAST_MESSAGES: {last_messages}
+LAST_MESSAGES:
+{'\n- '.join(last_messages)}
 """
 
         game_master_response_text = self.game_master.chat([
             { "role": "assistant", "content": message },
             { "role": "user", "content": player_input }
         ])['message']['content']
+
+        log_llm_call("GameMasterAgent", message, game_master_response_text)    
 
         Message.create(
             content=game_master_response_text,
