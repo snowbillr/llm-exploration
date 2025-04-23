@@ -4,9 +4,14 @@ from db.database import BaseModel
 
 player_item_deferred = DeferredThroughModel()
 
+class Game(BaseModel):
+    # Represents a single playthrough session
+    created_at = DateTimeField()
+
 class Location(BaseModel):
     name = CharField(max_length=100)
     description = TextField()
+    game = ForeignKeyField(Game, backref='locations')
 
 class Item(BaseModel):
     name = CharField(max_length=100)
@@ -15,6 +20,7 @@ class Item(BaseModel):
 class Player(BaseModel):
     name = CharField(max_length=100)
     health = IntegerField(default=100)
+    game = ForeignKeyField(Game, backref='players')
     # Define the many-to-many relationship
     items = ManyToManyField(
         model=Item,
@@ -36,11 +42,12 @@ class PlayerItem(BaseModel):
 class Character(BaseModel):
     name = CharField(max_length=100)
     description = TextField()
+    game = ForeignKeyField(Game, backref='characters')
 
 class NarrativeSummary(BaseModel):
     note = TextField()  # A single narrative note
     timestamp = IntegerField()  # To track the order of narrative events
-    player = ForeignKeyField(Player, backref='narrative_summaries', null=True)  # Optional reference to a player
+    game = ForeignKeyField(Game, backref='narrative_summaries')
 
 class Message(BaseModel):
     ROLE_USER = 'user'
