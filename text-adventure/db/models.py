@@ -33,7 +33,7 @@ class PlayerItem(BaseModel):
             (('player', 'item'), True),  # True makes it a unique index
         )
 
-class NPC(BaseModel):
+class Character(BaseModel):
     name = CharField(max_length=100)
     description = TextField()
 

@@ -29,8 +29,8 @@ class GameLoop:
         )
 
         narrative_context = self.narrative_agent.get_narrative_context(player_id=self.player.id)
-        character_context = ""
-        inventory_context = ""
+        character_context = self.character_agent.get_character_context(player_id=self.player.id)
+        inventory_context = self.inventory_agent.get_inventory_context(player_id=self.player.id)
         last_messages = [
             f"{message.role}: {message.content}"
             for message in Message.select().where(Message.player == self.player.id).order_by(Message.timestamp.asc()).limit(4)
@@ -64,6 +64,18 @@ LAST_MESSAGES:
         )
 
         self.narrative_agent.update_narrative_context(
+            game_master_message=game_master_response_text,
+            player_message=player_input,
+            player_id=self.player.id
+        )
+
+        self.character_agent.update_character_context(
+            game_master_message=game_master_response_text,
+            player_message=player_input,
+            player_id=self.player.id
+        )
+
+        self.inventory_agent.update_inventory_context(
             game_master_message=game_master_response_text,
             player_message=player_input,
             player_id=self.player.id

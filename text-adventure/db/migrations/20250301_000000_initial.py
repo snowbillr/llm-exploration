@@ -40,7 +40,7 @@ def migrate_forward():
     ''')
     
     db.execute_sql('''
-    CREATE TABLE IF NOT EXISTS npc (
+    CREATE TABLE IF NOT EXISTS character (
         id INTEGER PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         description TEXT NOT NULL
@@ -50,7 +50,7 @@ def migrate_forward():
 def migrate_backward():
     # Drop tables in reverse dependency order
     db.execute_sql('DROP TABLE IF EXISTS player_item')
-    db.execute_sql('DROP TABLE IF EXISTS npc')
+    db.execute_sql('DROP TABLE IF EXISTS character')
     db.execute_sql('DROP TABLE IF EXISTS player')
     db.execute_sql('DROP TABLE IF EXISTS item')
     db.execute_sql('DROP TABLE IF EXISTS location')
