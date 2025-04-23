@@ -47,12 +47,12 @@ class NarrativeAgent(BaseAgent):
         """
 
         llm_input = f"""
-                 <player message>
-                 {player_message}
-                 </player message>
-                 <game master message>
-                 {game_master_message}
-                 </game master message>
+<player message>
+{player_message}
+</player message>
+<game master message>
+{game_master_message}
+</game master message>
                  """
         llm_response = self.chat(
             messages=[

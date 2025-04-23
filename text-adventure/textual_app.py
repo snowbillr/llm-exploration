@@ -89,7 +89,7 @@ class TextAdventureApp(App):
             return
 
         input_box.disabled = True
-        response = await asyncio.to_thread(self.game_loop.process_turn, user_message, self.player)
+        response = await asyncio.create_task(asyncio.to_thread(self.game_loop.process_turn, user_message, self.player))
         input_box.disabled = False
 
         messages.write(f"[b][magenta]Game Master:[/magenta][/b] {response}", scroll_end=True)

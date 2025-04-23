@@ -37,7 +37,7 @@ class GameLoop:
         ]
         message = f"""
 NARRATIVE_CONTEXT:
-{'\n- '.join(narrative_context)}
+- {'\n- '.join(narrative_context)}
 
 CHARACTER_CONTEXT:
 {character_context}
@@ -46,7 +46,7 @@ INVENTORY_CONTEXT:
 {inventory_context}
 
 LAST_MESSAGES:
-{'\n- '.join(last_messages)}
+- {'\n- '.join(last_messages)}
 """
 
         game_master_response_text = self.game_master.chat([
